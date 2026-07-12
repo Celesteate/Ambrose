@@ -1,7 +1,11 @@
+import browser from "webextension-polyfill";
 import { getScriptType } from "../utils/scriptType";
 import { addErrorElement, addSuccessElement } from "../utils/alerts";
-import { solveQuiz, getConfidence } from "../utils/quiz";
+import { solveQuiz, getConfidence, quizAnswers } from "../utils/quiz";
 import { autoClickEnabled } from "../utils/autoClick";
+import { CursorManager } from "../utils/CursorManager";
+
+let cursorManager: CursorManager | null = null;
 
 (() => {
 
@@ -11,6 +15,43 @@ import { autoClickEnabled } from "../utils/autoClick";
         return;
 
     let pollCount = 0;
+
+    if (!window.location.href.includes('quiz/trivia/game')) {
+        const supportedQuizzes = Object.keys(quizAnswers);
+        
+        const highlightSupportedQuizzes = () => {
+            const elements = document.querySelectorAll('a, h2, h3, div, span, p, strong, b');
+            elements.forEach((el) => {
+                if (el.children.length === 0 && el.textContent) {
+                    const text = el.textContent.trim().replace(' Trivia', '');
+                    if (supportedQuizzes.includes(text) || supportedQuizzes.includes(text + ' Trivia')) {
+                        const htmlEl = el as HTMLElement;
+                        if (!htmlEl.dataset.ambroseHighlighted) {
+                            htmlEl.dataset.ambroseHighlighted = 'true';
+                            htmlEl.style.backgroundColor = '#bbf7d0'; // Tailwind green-200
+                            htmlEl.style.color = '#166534'; // Tailwind green-800
+                            htmlEl.style.padding = '0.125rem 0.25rem';
+                            htmlEl.style.borderRadius = '0.25rem';
+                            htmlEl.style.fontWeight = 'bold';
+                        }
+                    }
+                }
+            });
+        };
+
+        highlightSupportedQuizzes();
+        setInterval(highlightSupportedQuizzes, 2000);
+        return; 
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const nextQuestionButton = document.querySelector("#nextQuestion") as HTMLElement;
+            if (nextQuestionButton && nextQuestionButton.style.visibility === 'visible') {
+                nextQuestionButton.click();
+            }
+        }
+    });
 
     const pollInterval = setInterval(() => {
 
@@ -28,7 +69,7 @@ import { autoClickEnabled } from "../utils/autoClick";
                 addErrorElement('Could not find quiz name.');
                 return;
             } else {
-                chrome.runtime.sendMessage({ message: "quiz-completed", quiz: quizName}, () => {});
+                browser.runtime.sendMessage({ message: "quiz-completed", quiz: quizName}).then(() => {});
             }
             return;
         }
@@ -80,11 +121,28 @@ import { autoClickEnabled } from "../utils/autoClick";
 
         if (confidence > 50) {
             if (autoClickEnabled()) {
-				(answer.children[0]?.children[0] as any).click();
-				setTimeout(() => {
-					document.getElementById("nextQuestion")?.click();
-				}, 300);
-			}
+                if (!cursorManager) cursorManager = new CursorManager();
+                
+                // Start jiggling immediately while we wait the initial delay
+                cursorManager.startJiggling();
+                
+                // Random delay between 500ms and 2000ms before moving to answer
+                const initialDelay = Math.random() * (2000 - 500) + 500;
+                
+                setTimeout(async () => {
+                    // Click the answer
+                    const answerButton = answer.children[0]?.children[0] as HTMLElement;
+                    if (answerButton) {
+                        await cursorManager!.moveToElementAndClick(answerButton);
+                        
+                        // Immediately move to and click next question
+                        const nextQuestionButton = document.getElementById("nextQuestion");
+                        if (nextQuestionButton) {
+                            await cursorManager!.moveToElementAndClick(nextQuestionButton);
+                        }
+                    }
+                }, initialDelay);
+            }
 
             answer.classList.add('font-bold', 'text-green-700');
             const confidenceSpan = document.createElement('span');

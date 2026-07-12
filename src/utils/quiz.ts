@@ -58,4 +58,4 @@ const solveQuiz = (quiz: string, quizQuestion:string, quizOptionsElements:Array<
     return null;
 };
 
-export { solveQuiz, getConfidence };
+export { solveQuiz, getConfidence, quizAnswers };

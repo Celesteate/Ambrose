@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill";
 import { autoClickEnabled, toggleAutoClick } from "./autoClick";
 
 
@@ -7,7 +8,7 @@ const addErrorElement = (message: string) => {
     
     const errorIcon = document.createElement('img');
     errorIcon.classList.add('fill-current', 'opacity-75', 'h-8', 'w-8', 'mx-2');
-    errorIcon.src = chrome.runtime.getURL('assets/img/favicon.png');
+    errorIcon.src = browser.runtime.getURL('assets/img/favicon.png');
     
     const errorMessage = document.createElement('span');
     errorMessage.classList.add('font-semibold', 'mr-2', 'text-left', 'flex-auto');
@@ -31,7 +32,7 @@ const addSuccessElement = (message: string) => {
     
     const errorIcon = document.createElement('img');
     errorIcon.classList.add('fill-current', 'opacity-75', 'h-8', 'w-8', 'mx-2');
-    errorIcon.src = chrome.runtime.getURL('assets/img/favicon.png');
+    errorIcon.src = browser.runtime.getURL('assets/img/favicon.png');
     
     const errorMessage = document.createElement('span');
     errorMessage.classList.add('font-semibold', 'mr-2', 'text-left', 'flex-auto');

@@ -13,14 +13,19 @@
         "default_popup": "index.html",
         "default_title": "Ambrose"
     },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "ambrose@ambrose.com"
+        }
+    },
     "background": {
-        "service_worker": "./static/js/background.js",
+        "scripts": ["./static/js/background.js"],
         "type": "module"
     },
     "content_scripts": [
         {
             "matches": [
-                "https://www.wizard101.com/quiz/trivia/game/*"
+                "*://*.wizard101.com/*"
             ],
             "js": [
                 "./static/js/content.js"
